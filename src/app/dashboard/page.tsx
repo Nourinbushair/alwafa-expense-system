@@ -65,35 +65,46 @@ export default function DashboardPage() {
     setLoading(false)
   }
 
-  const totalAmount = expenses.reduce(
-    (sum, expense) => sum + Number(expense.amount || 0),
-    0
-  )
-
   const totalPaid = expenses.reduce(
-    (sum, expense) => sum + Number(expense.paid_amount || 0),
+    (sum, expense) =>
+      sum + Number(expense.paid_amount || 0),
     0
   )
 
   const totalBalance = expenses.reduce(
-    (sum, expense) => sum + Number(expense.balance_amount || 0),
+    (sum, expense) =>
+      sum + Number(expense.balance_amount || 0),
+    0
+  )
+
+  const totalAmount = expenses.reduce(
+    (sum, expense) =>
+      sum + Number(expense.amount || 0),
     0
   )
 
   function categoryPaid(category: string) {
     return expenses
-      .filter((expense) => expense.main_category === category)
+      .filter(
+        (expense) =>
+          expense.main_category === category
+      )
       .reduce(
-        (sum, expense) => sum + Number(expense.paid_amount || 0),
+        (sum, expense) =>
+          sum + Number(expense.paid_amount || 0),
         0
       )
   }
 
   function categoryBalance(category: string) {
     return expenses
-      .filter((expense) => expense.main_category === category)
+      .filter(
+        (expense) =>
+          expense.main_category === category
+      )
       .reduce(
-        (sum, expense) => sum + Number(expense.balance_amount || 0),
+        (sum, expense) =>
+          sum + Number(expense.balance_amount || 0),
         0
       )
   }
@@ -105,31 +116,34 @@ export default function DashboardPage() {
   function formatDate(date: string) {
     if (!date) return '-'
 
-    return new Date(`${date}T00:00:00`).toLocaleDateString(
-      'en-GB',
-      {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      }
-    )
+    return new Date(
+      `${date}T00:00:00`
+    ).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
   }
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-slate-50">
+
       <Sidebar />
 
       <main className="min-h-screen md:ml-64">
-        {/* Header */}
+
+        {/* HEADER */}
         <header className="border-b border-slate-200 bg-white px-4 pb-5 pt-20 sm:px-6 md:px-8 md:py-6 md:pt-6">
+
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+
             <div>
               <h1 className="text-xl font-semibold text-slate-800 sm:text-2xl">
                 Dashboard
               </h1>
 
               <p className="mt-1 text-sm text-slate-500">
-                Al-Wafa International Expense Overview
+                Al-Wafa International
               </p>
             </div>
 
@@ -139,14 +153,18 @@ export default function DashboardPage() {
             >
               Refresh
             </button>
+
           </div>
+
         </header>
 
         <div className="space-y-6 p-4 sm:p-6 md:p-8">
-          {/* Main Summary */}
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {/* Total Commitment */}
+
+          {/* SUMMARY */}
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
               <p className="text-sm font-medium text-slate-500">
                 Total Expenses
               </p>
@@ -155,126 +173,88 @@ export default function DashboardPage() {
                 {formatOMR(totalAmount)}
               </p>
 
-              <p className="mt-2 text-xs text-slate-400">
-                Total transaction value
-              </p>
             </div>
 
-            {/* Total Paid */}
             <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
+
               <p className="text-sm font-medium text-emerald-700">
-                Total Paid Expenses
+                Total Paid
               </p>
 
               <p className="mt-2 text-2xl font-bold text-emerald-700">
                 {formatOMR(totalPaid)}
               </p>
 
-              <p className="mt-2 text-xs text-emerald-600">
-                Actual amount paid
-              </p>
             </div>
 
-            {/* Balance */}
             <div className="rounded-2xl border border-red-100 bg-red-50 p-5 shadow-sm">
+
               <p className="text-sm font-medium text-red-700">
-                Total Balance Payable
+                Balance Payable
               </p>
 
               <p className="mt-2 text-2xl font-bold text-red-700">
                 {formatOMR(totalBalance)}
               </p>
 
-              <p className="mt-2 text-xs text-red-600">
-                Amount still to be paid
-              </p>
             </div>
 
-            {/* Transactions */}
-            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 shadow-sm">
-              <p className="text-sm font-medium text-blue-700">
-                Transactions
-              </p>
-
-              <p className="mt-2 text-2xl font-bold text-blue-700">
-                {expenses.length}
-              </p>
-
-              <p className="mt-2 text-xs text-blue-600">
-                Recorded expenses
-              </p>
-            </div>
           </section>
 
-          {/* Accounting explanation */}
-          <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="font-semibold text-slate-800">
-                  Payment Overview
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Paid amounts and outstanding balances are calculated separately.
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm">
-                <span className="text-slate-500">
-                  Paid + Balance:
-                </span>
-
-                <span className="ml-2 font-semibold text-slate-800">
-                  {formatOMR(totalPaid + totalBalance)}
-                </span>
-              </div>
-            </div>
-          </section>
-
-          {/* Category Summary */}
+          {/* CATEGORY SUMMARY */}
           <section>
+
             <div className="mb-4">
+
               <h2 className="text-lg font-semibold text-slate-800">
                 Category Summary
               </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Paid and outstanding amounts by category
-              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+
               {categoryList.map((category) => {
+
                 const paid = categoryPaid(category)
                 const balance = categoryBalance(category)
+
+                const count = expenses.filter(
+                  (expense) =>
+                    expense.main_category === category
+                ).length
 
                 return (
                   <div
                     key={category}
                     className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
                   >
-                    <div className="flex items-start justify-between gap-3">
+
+                    <div className="flex items-start justify-between">
+
                       <div>
+
                         <h3 className="font-semibold text-slate-800">
                           {category}
                         </h3>
 
                         <p className="mt-1 text-xs text-slate-400">
-                          {expenses.filter(
-                            (expense) =>
-                              expense.main_category === category
-                          ).length}{' '}
-                          transaction(s)
+                          {count} transaction
+                          {count !== 1 ? 's' : ''}
                         </p>
+
                       </div>
 
-                      <div className="rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                      <span className="rounded-lg bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
                         OMR
-                      </div>
+                      </span>
+
                     </div>
 
-                    <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+
                       <div className="rounded-lg bg-emerald-50 p-3">
+
                         <p className="text-xs text-emerald-600">
                           Paid
                         </p>
@@ -282,9 +262,11 @@ export default function DashboardPage() {
                         <p className="mt-1 text-sm font-bold text-emerald-700">
                           {formatOMR(paid)}
                         </p>
+
                       </div>
 
                       <div className="rounded-lg bg-red-50 p-3">
+
                         <p className="text-xs text-red-600">
                           Balance
                         </p>
@@ -292,51 +274,60 @@ export default function DashboardPage() {
                         <p className="mt-1 text-sm font-bold text-red-700">
                           {formatOMR(balance)}
                         </p>
+
                       </div>
+
                     </div>
+
                   </div>
                 )
               })}
+
             </div>
+
           </section>
 
-          {/* Recent Transactions */}
+          {/* RECENT EXPENSES */}
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-100 p-5 sm:p-6">
+
+            <div className="border-b border-slate-100 p-5">
+
               <h2 className="font-semibold text-slate-800">
-                Recent Transactions
+                Recent Expenses
               </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Latest recorded expenses
-              </p>
             </div>
 
             {loading ? (
-              <div className="p-8 text-center text-sm text-slate-500">
-                Loading expenses...
-              </div>
-            ) : expenses.length === 0 ? (
-              <div className="p-8 text-center">
-                <p className="text-sm font-medium text-slate-600">
-                  No expenses recorded yet.
-                </p>
 
-                <p className="mt-1 text-xs text-slate-400">
-                  Add your first transaction from the Expenses page.
-                </p>
+              <div className="p-8 text-center text-sm text-slate-500">
+                Loading...
               </div>
+
+            ) : expenses.length === 0 ? (
+
+              <div className="p-8 text-center text-sm text-slate-500">
+                No expenses recorded yet.
+              </div>
+
             ) : (
+
               <>
-                {/* Mobile cards */}
+
+                {/* MOBILE */}
                 <div className="divide-y divide-slate-100 md:hidden">
+
                   {expenses.slice(0, 8).map((expense) => (
+
                     <div
                       key={expense.id}
                       className="p-4"
                     >
+
                       <div className="flex items-start justify-between gap-3">
+
                         <div>
+
                           <p className="font-medium text-slate-800">
                             {expense.subcategory}
                           </p>
@@ -356,47 +347,70 @@ export default function DashboardPage() {
                               Receipt: {expense.receipt_number}
                             </p>
                           )}
+
+                          <p className="mt-1 text-xs text-slate-400">
+                            {formatDate(
+                              expense.expense_date
+                            )}
+                          </p>
+
                         </div>
 
                         <p className="whitespace-nowrap text-sm font-semibold text-slate-800">
-                          {formatOMR(Number(expense.amount))}
+                          {formatOMR(
+                            Number(expense.amount)
+                          )}
                         </p>
+
                       </div>
 
                       <div className="mt-3 grid grid-cols-2 gap-2">
+
                         <div className="rounded-lg bg-emerald-50 p-2">
+
                           <p className="text-[11px] text-emerald-600">
                             Paid
                           </p>
 
                           <p className="text-xs font-semibold text-emerald-700">
-                            {formatOMR(Number(expense.paid_amount))}
+                            {formatOMR(
+                              Number(expense.paid_amount)
+                            )}
                           </p>
+
                         </div>
 
                         <div className="rounded-lg bg-red-50 p-2">
+
                           <p className="text-[11px] text-red-600">
                             Balance
                           </p>
 
                           <p className="text-xs font-semibold text-red-700">
-                            {formatOMR(Number(expense.balance_amount))}
+                            {formatOMR(
+                              Number(expense.balance_amount)
+                            )}
                           </p>
+
                         </div>
+
                       </div>
 
-                      <p className="mt-2 text-xs text-slate-400">
-                        {formatDate(expense.expense_date)}
-                      </p>
                     </div>
+
                   ))}
+
                 </div>
 
-                {/* Desktop table */}
+                {/* DESKTOP */}
                 <div className="hidden overflow-x-auto md:block">
-                  <table className="w-full min-w-[850px] text-left">
+
+                  <table className="w-full min-w-[800px] text-left">
+
                     <thead className="border-b border-slate-100 bg-slate-50">
+
                       <tr>
+
                         <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
                           Date
                         </th>
@@ -410,72 +424,97 @@ export default function DashboardPage() {
                         </th>
 
                         <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Amount
-                        </th>
-
-                        <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                           Paid
                         </th>
 
                         <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                           Balance
                         </th>
+
                       </tr>
+
                     </thead>
 
                     <tbody className="divide-y divide-slate-100">
-                      {expenses.slice(0, 10).map((expense) => (
-                        <tr
-                          key={expense.id}
-                          className="hover:bg-slate-50"
-                        >
-                          <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
-                            {formatDate(expense.expense_date)}
-                          </td>
 
-                          <td className="px-5 py-4">
-                            <p className="text-sm font-medium text-slate-800">
-                              {expense.subcategory}
-                            </p>
+                      {expenses.slice(0, 10).map(
+                        (expense) => (
 
-                            <p className="text-xs text-slate-400">
-                              {expense.main_category}
-                            </p>
-                          </td>
+                          <tr
+                            key={expense.id}
+                            className="hover:bg-slate-50"
+                          >
 
-                          <td className="max-w-[260px] px-5 py-4">
-                            <p className="truncate text-sm text-slate-600">
-                              {expense.description || '-'}
-                            </p>
+                            <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
+                              {formatDate(
+                                expense.expense_date
+                              )}
+                            </td>
 
-                            {expense.company_name && (
-                              <p className="mt-1 text-xs text-slate-400">
-                                {expense.company_name}
+                            <td className="px-5 py-4">
+
+                              <p className="text-sm font-medium text-slate-800">
+                                {expense.subcategory}
                               </p>
-                            )}
-                          </td>
 
-                          <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-medium text-slate-800">
-                            {formatOMR(Number(expense.amount))}
-                          </td>
+                              <p className="text-xs text-slate-400">
+                                {expense.main_category}
+                              </p>
 
-                          <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-medium text-emerald-600">
-                            {formatOMR(Number(expense.paid_amount))}
-                          </td>
+                            </td>
 
-                          <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-medium text-red-600">
-                            {formatOMR(Number(expense.balance_amount))}
-                          </td>
-                        </tr>
-                      ))}
+                            <td className="max-w-[300px] px-5 py-4">
+
+                              <p className="truncate text-sm text-slate-600">
+                                {expense.description ||
+                                  '-'}
+                              </p>
+
+                              {expense.company_name && (
+                                <p className="mt-1 text-xs text-slate-400">
+                                  {expense.company_name}
+                                </p>
+                              )}
+
+                            </td>
+
+                            <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-semibold text-emerald-600">
+                              {formatOMR(
+                                Number(
+                                  expense.paid_amount
+                                )
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-semibold text-red-600">
+                              {formatOMR(
+                                Number(
+                                  expense.balance_amount
+                                )
+                              )}
+                            </td>
+
+                          </tr>
+
+                        )
+                      )}
+
                     </tbody>
+
                   </table>
+
                 </div>
+
               </>
+
             )}
+
           </section>
+
         </div>
+
       </main>
+
     </div>
   )
 }
