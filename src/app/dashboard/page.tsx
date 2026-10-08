@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import Sidebar from '../../components/Sidebar'
 import { createClient } from '../../lib/supabase/client'
 
 type Expense = {
@@ -11,349 +11,471 @@ type Expense = {
   subcategory: string
   description: string | null
   amount: number
+  paid_amount: number
+  balance_amount: number
+  company_name: string | null
+  receipt_number: string | null
 }
 
-const menuItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: '▦' },
-  { name: 'Expenses', href: '/expenses', icon: '◈' },
-  { name: 'Reports', href: '/reports', icon: '▤' },
-  { name: 'Settings', href: '/settings', icon: '⚙' },
-]
-
-const categories = [
-  { name: 'Company', icon: '🏢' },
-  { name: 'Personal', icon: '👤' },
-  { name: 'Bills & Utilities', icon: '⚡' },
-  { name: 'Rent', icon: '🏠' },
-  { name: 'Salary & Payroll', icon: '💰' },
-  { name: 'Purchases', icon: '🛒' },
-  { name: 'Transport & Vehicle', icon: '⛽' },
-  { name: 'Finance', icon: '💳' },
+const categoryList = [
+  'Company',
+  'Personal',
+  'Bills & Utilities',
+  'Salary & Payroll',
+  'Transport & Vehicle',
+  'Finance',
 ]
 
 export default function DashboardPage() {
+  const supabase = createClient()
+
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function loadExpenses() {
-      const supabase = createClient()
-
-      const { data, error } = await supabase
-        .from('expenses')
-        .select(
-          'id, expense_date, main_category, subcategory, description, amount'
-        )
-        .order('expense_date', { ascending: false })
-
-      if (error) {
-        console.error('Expense loading error:', error)
-        setLoading(false)
-        return
-      }
-
-      setExpenses(data || [])
-      setLoading(false)
-    }
-
     loadExpenses()
   }, [])
 
-  const total = expenses.reduce(
-    (sum, expense) => sum + Number(expense.amount),
+  async function loadExpenses() {
+    setLoading(true)
+
+    const { data, error } = await supabase
+      .from('expenses')
+      .select(
+        `
+        id,
+        expense_date,
+        main_category,
+        subcategory,
+        description,
+        amount,
+        paid_amount,
+        balance_amount,
+        company_name,
+        receipt_number
+        `
+      )
+      .eq('transaction_type', 'expense')
+      .order('expense_date', { ascending: false })
+
+    if (!error && data) {
+      setExpenses(data as Expense[])
+    }
+
+    setLoading(false)
+  }
+
+  const totalAmount = expenses.reduce(
+    (sum, expense) => sum + Number(expense.amount || 0),
     0
   )
 
-  function categoryTotal(category: string) {
+  const totalPaid = expenses.reduce(
+    (sum, expense) => sum + Number(expense.paid_amount || 0),
+    0
+  )
+
+  const totalBalance = expenses.reduce(
+    (sum, expense) => sum + Number(expense.balance_amount || 0),
+    0
+  )
+
+  function categoryPaid(category: string) {
     return expenses
       .filter((expense) => expense.main_category === category)
-      .reduce((sum, expense) => sum + Number(expense.amount), 0)
+      .reduce(
+        (sum, expense) => sum + Number(expense.paid_amount || 0),
+        0
+      )
   }
 
-  async function handleLogout() {
-    const supabase = createClient()
+  function categoryBalance(category: string) {
+    return expenses
+      .filter((expense) => expense.main_category === category)
+      .reduce(
+        (sum, expense) => sum + Number(expense.balance_amount || 0),
+        0
+      )
+  }
 
-    await supabase.auth.signOut()
+  function formatOMR(value: number) {
+    return `OMR ${value.toFixed(3)}`
+  }
 
-    window.location.href = '/login'
+  function formatDate(date: string) {
+    if (!date) return '-'
+
+    return new Date(`${date}T00:00:00`).toLocaleDateString(
+      'en-GB',
+      {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }
+    )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen overflow-x-hidden bg-slate-50">
+      <Sidebar />
 
-      {/* SIDEBAR */}
-      <aside className="fixed left-0 top-0 flex h-screen w-60 flex-col border-r border-slate-200 bg-white">
-
-        {/* LOGO */}
-        <div className="flex h-20 items-center border-b border-slate-100 px-6">
-
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
-            AW
-          </div>
-
-          <div className="ml-3">
-            <h1 className="text-sm font-semibold text-slate-800">
-              Al-Wafa
-            </h1>
-
-            <p className="text-xs text-slate-400">
-              International
-            </p>
-          </div>
-
-        </div>
-
-        {/* NAVIGATION */}
-        <nav className="flex-1 px-4 py-6">
-
-          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Main Menu
-          </p>
-
-          <div className="space-y-1">
-
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center rounded-lg px-3 py-3 text-sm ${
-                  item.href === '/dashboard'
-                    ? 'bg-blue-50 font-medium text-blue-700'
-                    : 'text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <span className="mr-3 w-5 text-center">
-                  {item.icon}
-                </span>
-
-                {item.name}
-              </Link>
-            ))}
-
-          </div>
-
-        </nav>
-
-        {/* SIDEBAR BOTTOM */}
-        <div className="border-t border-slate-100 p-4">
-
-          <div className="mb-3 flex items-center rounded-lg bg-emerald-50 px-3 py-2">
-
-            <span className="mr-2 h-2 w-2 rounded-full bg-emerald-500" />
-
-            <span className="text-xs font-medium text-emerald-700">
-              System Online
-            </span>
-
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center rounded-lg px-3 py-3 text-sm text-slate-500 transition hover:bg-red-50 hover:text-red-600"
-          >
-            <span className="mr-3 w-5 text-center">
-              ↪
-            </span>
-
-            Sign Out
-          </button>
-
-          <p className="mt-4 px-3 text-xs text-slate-300">
-            Al-Wafa Expense System v1.0
-          </p>
-
-        </div>
-
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main className="ml-60 min-h-screen">
-
-        {/* HEADER */}
-        <header className="flex items-center justify-between border-b border-slate-200 bg-white px-8 py-6">
-
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-800">
-              Dashboard
-            </h1>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Expense overview
-            </p>
-          </div>
-
-          {/* ADD EXPENSE BUTTON */}
-          <Link
-            href="/expenses"
-            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
-          >
-            <span className="mr-2 text-lg leading-none">
-              +
-            </span>
-
-            Add Expense
-          </Link>
-
-        </header>
-
-        {/* PAGE CONTENT */}
-        <div className="p-8">
-
-          {/* TOTAL EXPENSE */}
-          <section className="rounded-xl bg-blue-600 p-6 shadow-sm">
-
-            <p className="text-sm text-blue-100">
-              Total Expenses
-            </p>
-
-            <h2 className="mt-2 text-3xl font-semibold text-white">
-              OMR {total.toFixed(3)}
-            </h2>
-
-            <p className="mt-2 text-sm text-blue-100">
-              Total recorded expenses
-            </p>
-
-          </section>
-
-          {/* EXPENSE SUMMARY */}
-          <section className="mt-8">
-
-            <div className="mb-4">
-
-              <h2 className="text-lg font-semibold text-slate-800">
-                Expense Summary
-              </h2>
+      <main className="min-h-screen md:ml-64">
+        {/* Header */}
+        <header className="border-b border-slate-200 bg-white px-4 pb-5 pt-20 sm:px-6 md:px-8 md:py-6 md:pt-6">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div>
+              <h1 className="text-xl font-semibold text-slate-800 sm:text-2xl">
+                Dashboard
+              </h1>
 
               <p className="mt-1 text-sm text-slate-500">
-                Expenses by category
+                Al-Wafa International Expense Overview
+              </p>
+            </div>
+
+            <button
+              onClick={loadExpenses}
+              className="w-fit rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Refresh
+            </button>
+          </div>
+        </header>
+
+        <div className="space-y-6 p-4 sm:p-6 md:p-8">
+          {/* Main Summary */}
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {/* Total Commitment */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-sm font-medium text-slate-500">
+                Total Expenses
               </p>
 
+              <p className="mt-2 text-2xl font-bold text-slate-800">
+                {formatOMR(totalAmount)}
+              </p>
+
+              <p className="mt-2 text-xs text-slate-400">
+                Total transaction value
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {/* Total Paid */}
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
+              <p className="text-sm font-medium text-emerald-700">
+                Total Paid Expenses
+              </p>
 
-              {categories.map((category) => (
-                <div
-                  key={category.name}
-                  className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
-                >
+              <p className="mt-2 text-2xl font-bold text-emerald-700">
+                {formatOMR(totalPaid)}
+              </p>
 
-                  <div className="flex items-center gap-3">
-
-                    <span className="text-xl">
-                      {category.icon}
-                    </span>
-
-                    <span className="text-sm font-medium text-slate-600">
-                      {category.name}
-                    </span>
-
-                  </div>
-
-                  <p className="mt-4 text-xl font-semibold text-slate-800">
-                    OMR {categoryTotal(category.name).toFixed(3)}
-                  </p>
-
-                </div>
-              ))}
-
+              <p className="mt-2 text-xs text-emerald-600">
+                Actual amount paid
+              </p>
             </div>
 
+            {/* Balance */}
+            <div className="rounded-2xl border border-red-100 bg-red-50 p-5 shadow-sm">
+              <p className="text-sm font-medium text-red-700">
+                Total Balance Payable
+              </p>
+
+              <p className="mt-2 text-2xl font-bold text-red-700">
+                {formatOMR(totalBalance)}
+              </p>
+
+              <p className="mt-2 text-xs text-red-600">
+                Amount still to be paid
+              </p>
+            </div>
+
+            {/* Transactions */}
+            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 shadow-sm">
+              <p className="text-sm font-medium text-blue-700">
+                Transactions
+              </p>
+
+              <p className="mt-2 text-2xl font-bold text-blue-700">
+                {expenses.length}
+              </p>
+
+              <p className="mt-2 text-xs text-blue-600">
+                Recorded expenses
+              </p>
+            </div>
           </section>
 
-          {/* RECENT EXPENSES */}
-          <section className="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-
-            {/* SECTION HEADER */}
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
-
+          {/* Accounting explanation */}
+          <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-
-                <h2 className="text-lg font-semibold text-slate-800">
-                  Recent Expenses
+                <h2 className="font-semibold text-slate-800">
+                  Payment Overview
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Latest transactions
+                  Paid amounts and outstanding balances are calculated separately.
                 </p>
-
               </div>
 
-              <Link
-                href="/expenses"
-                className="text-sm font-medium text-blue-600 transition hover:text-blue-700"
-              >
-                View All
-              </Link>
+              <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm">
+                <span className="text-slate-500">
+                  Paid + Balance:
+                </span>
 
+                <span className="ml-2 font-semibold text-slate-800">
+                  {formatOMR(totalPaid + totalBalance)}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* Category Summary */}
+          <section>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-slate-800">
+                Category Summary
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Paid and outstanding amounts by category
+              </p>
             </div>
 
-            {/* LOADING */}
-            {loading && (
-              <div className="px-6 py-10 text-center text-sm text-slate-500">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {categoryList.map((category) => {
+                const paid = categoryPaid(category)
+                const balance = categoryBalance(category)
+
+                return (
+                  <div
+                    key={category}
+                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold text-slate-800">
+                          {category}
+                        </h3>
+
+                        <p className="mt-1 text-xs text-slate-400">
+                          {expenses.filter(
+                            (expense) =>
+                              expense.main_category === category
+                          ).length}{' '}
+                          transaction(s)
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                        OMR
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <div className="rounded-lg bg-emerald-50 p-3">
+                        <p className="text-xs text-emerald-600">
+                          Paid
+                        </p>
+
+                        <p className="mt-1 text-sm font-bold text-emerald-700">
+                          {formatOMR(paid)}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg bg-red-50 p-3">
+                        <p className="text-xs text-red-600">
+                          Balance
+                        </p>
+
+                        <p className="mt-1 text-sm font-bold text-red-700">
+                          {formatOMR(balance)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* Recent Transactions */}
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-100 p-5 sm:p-6">
+              <h2 className="font-semibold text-slate-800">
+                Recent Transactions
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Latest recorded expenses
+              </p>
+            </div>
+
+            {loading ? (
+              <div className="p-8 text-center text-sm text-slate-500">
                 Loading expenses...
               </div>
-            )}
-
-            {/* EMPTY */}
-            {!loading && expenses.length === 0 && (
-              <div className="px-6 py-10 text-center">
-
-                <p className="text-sm text-slate-500">
+            ) : expenses.length === 0 ? (
+              <div className="p-8 text-center">
+                <p className="text-sm font-medium text-slate-600">
                   No expenses recorded yet.
                 </p>
 
-                <Link
-                  href="/expenses"
-                  className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                  Add your first expense
-                </Link>
-
+                <p className="mt-1 text-xs text-slate-400">
+                  Add your first transaction from the Expenses page.
+                </p>
               </div>
-            )}
+            ) : (
+              <>
+                {/* Mobile cards */}
+                <div className="divide-y divide-slate-100 md:hidden">
+                  {expenses.slice(0, 8).map((expense) => (
+                    <div
+                      key={expense.id}
+                      className="p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-slate-800">
+                            {expense.subcategory}
+                          </p>
 
-            {/* EXPENSE LIST */}
-            {!loading && expenses.length > 0 && (
-              <div className="divide-y divide-slate-100">
+                          <p className="mt-1 text-xs text-slate-500">
+                            {expense.main_category}
+                          </p>
 
-                {expenses.slice(0, 5).map((expense) => (
-                  <div
-                    key={expense.id}
-                    className="flex items-center justify-between px-6 py-4 transition hover:bg-slate-50"
-                  >
+                          {expense.company_name && (
+                            <p className="mt-1 text-xs text-slate-400">
+                              {expense.company_name}
+                            </p>
+                          )}
 
-                    <div>
+                          {expense.receipt_number && (
+                            <p className="mt-1 text-xs text-slate-400">
+                              Receipt: {expense.receipt_number}
+                            </p>
+                          )}
+                        </div>
 
-                      <p className="font-medium text-slate-700">
-                        {expense.description || expense.subcategory}
+                        <p className="whitespace-nowrap text-sm font-semibold text-slate-800">
+                          {formatOMR(Number(expense.amount))}
+                        </p>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <div className="rounded-lg bg-emerald-50 p-2">
+                          <p className="text-[11px] text-emerald-600">
+                            Paid
+                          </p>
+
+                          <p className="text-xs font-semibold text-emerald-700">
+                            {formatOMR(Number(expense.paid_amount))}
+                          </p>
+                        </div>
+
+                        <div className="rounded-lg bg-red-50 p-2">
+                          <p className="text-[11px] text-red-600">
+                            Balance
+                          </p>
+
+                          <p className="text-xs font-semibold text-red-700">
+                            {formatOMR(Number(expense.balance_amount))}
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="mt-2 text-xs text-slate-400">
+                        {formatDate(expense.expense_date)}
                       </p>
-
-                      <p className="mt-1 text-xs text-slate-400">
-                        {expense.expense_date} ·{' '}
-                        {expense.main_category} ·{' '}
-                        {expense.subcategory}
-                      </p>
-
                     </div>
+                  ))}
+                </div>
 
-                    <p className="font-semibold text-slate-700">
-                      OMR {Number(expense.amount).toFixed(3)}
-                    </p>
+                {/* Desktop table */}
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full min-w-[850px] text-left">
+                    <thead className="border-b border-slate-100 bg-slate-50">
+                      <tr>
+                        <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Date
+                        </th>
 
-                  </div>
-                ))}
+                        <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Category
+                        </th>
 
-              </div>
+                        <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Description
+                        </th>
+
+                        <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Amount
+                        </th>
+
+                        <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Paid
+                        </th>
+
+                        <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Balance
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-slate-100">
+                      {expenses.slice(0, 10).map((expense) => (
+                        <tr
+                          key={expense.id}
+                          className="hover:bg-slate-50"
+                        >
+                          <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
+                            {formatDate(expense.expense_date)}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <p className="text-sm font-medium text-slate-800">
+                              {expense.subcategory}
+                            </p>
+
+                            <p className="text-xs text-slate-400">
+                              {expense.main_category}
+                            </p>
+                          </td>
+
+                          <td className="max-w-[260px] px-5 py-4">
+                            <p className="truncate text-sm text-slate-600">
+                              {expense.description || '-'}
+                            </p>
+
+                            {expense.company_name && (
+                              <p className="mt-1 text-xs text-slate-400">
+                                {expense.company_name}
+                              </p>
+                            )}
+                          </td>
+
+                          <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-medium text-slate-800">
+                            {formatOMR(Number(expense.amount))}
+                          </td>
+
+                          <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-medium text-emerald-600">
+                            {formatOMR(Number(expense.paid_amount))}
+                          </td>
+
+                          <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-medium text-red-600">
+                            {formatOMR(Number(expense.balance_amount))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
-
           </section>
-
         </div>
-
       </main>
-
     </div>
   )
 }
